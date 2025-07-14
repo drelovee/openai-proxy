@@ -1,39 +1,36 @@
 import express from 'express';
-import axios from 'axios';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import fetch from 'node-fetch';
 
 dotenv.config();
 
 const app = express();
+const PORT = process.env.PORT || 3000;
+
 app.use(cors());
 app.use(express.json());
 
-// ОБРАБОТЧИК ЗАПРОСА
 app.post('/v1/chat/completions', async (req, res) => {
   try {
-    const response = await axios.post(
-      'https://api.openai.com/v1/chat/completions',
-      req.body,
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-        },
-      }
-    );
-    res.json(response.data);
-  } catch (error) {
-    console.error('Ошибка:', error.response?.data || error.message);
-    res.status(500).json({
-      error: 'Ошибка запроса к OpenAI',
-      details: error.response?.data || error.message,
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+        'OpenAI-Project': process.env.OPENAI_PROJECT_ID,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(req.body)
     });
+
+    const data = await response.json();
+    res.status(response.status).json(data);
+
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error', details: error.message });
   }
 });
 
-// ЗАПУСК СЕРВЕРА
-const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`🚀 Прокси-сервер работает на порту ${PORT}`);
+  console.log(`✅ Proxy is running on http://localhost:${PORT}`);
 });
